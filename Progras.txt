@@ -1,0 +1,145 @@
+Progra Python
+
+
+import matplotlib.pyplot as plt
+import serial
+import math
+
+lectura=serial.Serial("COM6",9600)
+
+datos=input("Comando: ")
+lectura.write(datos.encode())
+contador=0
+g=True 
+w=[]
+while g:
+    if lectura.in_waiting>0:
+        d=lectura.readline()
+        q=d.decode("utf8").replace('\r\n', '')
+        w.append(q)
+        contador = contador + 1
+        if contador == 2:
+            g=False
+       
+z=[]
+
+for i in w:
+    j=float(i)
+    z.append(j)
+
+
+d1=z[0]
+d2=z[1]
+
+coseno_alpha = 0  #angulo alpha
+alpha = 0      #angulo interno del triangulo
+teta = 0       #angulo deseado
+arista = 100   #distancia de ultrasonicos en cm
+
+if d2 >=100:
+    d2_2=d2+10
+    coseno_alpha = (arista * arista + d1 * d1 - d2_2 * d2_2) / (2 * arista * d1)
+    alpha = math.acos(coseno_alpha)
+    teta = (math.pi / 2) - alpha
+    dist_x = d1 * math.cos(teta)
+    dist_y = d1 * math.sin(teta)
+else:
+    coseno_alpha = (arista * arista + d1 * d1 - d2 * d2) / (2 * arista * d1)
+    alpha = math.acos(coseno_alpha)
+    teta = (math.pi / 2) - alpha
+    dist_x = d1 * math.cos(teta)
+    dist_y = d1 * math.sin(teta)
+    
+
+print(f'Distancias: {d1}cm {d2}cm')
+plt.plot(dist_x,dist_y,marker="o", color="red",label=f'X={dist_x}\n Y={dist_y}')
+plt.grid()
+plt.title('Coordenadas del plano')
+plt.xlabel('cm')
+plt.ylabel('cm')
+plt.legend()
+plt.show()
+
+#####################################################################
+
+Progra Arduino
+
+
+//pines del sensor
+//arduino de la base
+const int trig = 2;  //gris, todos los trigger
+const int t1 = 3;
+const int t2 = 5;
+//arduino de la arista
+const int echo1 = 4;  //azul, echo de la base
+const int echo2 = 6;  //rosado, echo de la arista
+//distancia 1 debe ser el origen, echo 1
+//distancia 2 debe ser final de eje "Y", echo 2
+
+float dist_x;  //distancia en x
+float dist_y;  //distancia en y
+
+//otras variables
+float d1_extra = 20;
+float d2_extra = 65;
+String datos;
+
+float tiempo1;
+float tiempo2;
+float distancia1;
+float distancia2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(trig, OUTPUT);
+  pinMode(echo1, INPUT);
+  pinMode(echo2, INPUT);
+}
+
+void loop() {
+  //distancia 1
+  digitalWrite(trig, HIGH);
+  digitalWrite(t1, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+  digitalWrite(t1, LOW);
+  tiempo1 = pulseIn(echo1, HIGH);
+  distancia1 = (tiempo1) * (0.02429) + d1_extra;  // velocidad = 0.02429 cm/us
+  /*Serial.print("distancia1:");
+    Serial.print(distancia1);
+    Serial.print(" ");*/
+  tiempo1 = pulseIn(echo1, LOW);
+  delay(3000);
+
+  //distancia 2
+  digitalWrite(trig, HIGH);
+  digitalWrite(t2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+  digitalWrite(t2, LOW);
+  tiempo2 = pulseIn(echo2, HIGH);
+  distancia2 = (tiempo2) * (0.02429) + d2_extra;  // velocidad = 0.02429cm/us
+  //Serial.print("distancia2:");
+  //Serial.println(distancia2);
+  tiempo2 = pulseIn(echo2, LOW);
+  delay(3000);
+
+
+  /*Serial.print(" x:");
+  Serial.print(dist_x);
+  Serial.print(" y:");
+  Serial.println(dist_y);*/
+
+    if(Serial.available()>0){
+    datos=Serial.readStringUntil('\n');
+    if(datos=="1"){
+
+      Serial.println(distancia1);
+      Serial.println(distancia2);
+
+    }
+
+  }
+
+ 
+}
